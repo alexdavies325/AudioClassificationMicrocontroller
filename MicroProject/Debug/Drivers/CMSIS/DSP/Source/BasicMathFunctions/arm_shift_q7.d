@@ -1,5 +1,5 @@
 Drivers/CMSIS/DSP/Source/BasicMathFunctions/arm_shift_q7.o: \
- /home/alex/Alex/STM32CubeIDE/workspace_1.1.0/FinalAudioClassificationPPG/Drivers/CMSIS/DSP/Source/BasicMathFunctions/arm_shift_q7.c \
+ /home/alex/Alex/STM32CubeIDE/workspace_1.1.0/FinalAudioClassificationPPGC8/Drivers/CMSIS/DSP/Source/BasicMathFunctions/arm_shift_q7.c \
  ../Drivers/CMSIS/DSP/Include/arm_math.h \
  ../Drivers/CMSIS/Include/core_cm7.h \
  ../Drivers/CMSIS/Include/cmsis_version.h \

@@ -16,11 +16,14 @@ mfcc(const short* aSignal, unsigned int aSignalLen, int aSampleRate,
 	char buffer2[100];
 	strcpy(buffer2, "Before csf_mfcc\r\n");
 	HAL_UART_Transmit(&huart3, (uint8_t*)buffer2, strlen(buffer2), HAL_MAX_DELAY);
+
   *mfcc_d1 = csf_mfcc(aSignal, aSignalLen, aSampleRate, aWinLen, aWinStep,
                       aNCep, aNFilters, aNFFT, aLowFreq, aHighFreq, aPreemph,
                       aCepLifter, aAppendEnergy, aWinFunc, aMFCC);
+
   	strcpy(buffer2, "After csf_mfcc\r\n");
   	HAL_UART_Transmit(&huart3, (uint8_t*)buffer2, strlen(buffer2), HAL_MAX_DELAY);
+
   *mfcc_d2 = aNCep;
 }
 

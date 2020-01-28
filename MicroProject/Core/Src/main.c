@@ -38,8 +38,18 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ADC_BUF_SIZE 113
-#define BIG_BUFFER_SIZE 9000
+#define ADC_BUF_SIZE                   113
+#define BIG_BUFFER_SIZE                64000
+#define LITTLE_BUFFER_SIZE             1600
+#define PRINT_BUFFER_SIZE              150
+#define MAX_UINT12                     4095
+#define MFCC_LENGTH                    9
+#define SAMPLE_RATE                    16000
+#define WINDOW_LENGTH 0.025
+#define WINDOW_STEP   0.01
+#define NCEPS          13
+#define NFILT         26
+#define NFFT          512
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -63,8 +73,9 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
 uint16_t adc_buf[ADC_BUF_SIZE];
-uint16_t BigBuffer[BIG_BUFFER_SIZE];
-uint16_t TakeADCReading = 0;
+int16_t BigBuffer[BIG_BUFFER_SIZE];
+int16_t LittleBuffer[LITTLE_BUFFER_SIZE];
+uint8_t TakeADCReading = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -78,19 +89,12 @@ static void MX_ADC1_Init(void);
 //static void MX_TIM3_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-
+void floatToIntRound(float *input, int16_t *output);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/*uint32_t timer = 0;
-void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim){
-	//Timer3 ++;
-	timer ++;
-	//char buffer[16];
-	//sprintf(buffer, "%lu\r\n", timer);
-	//HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
-}*/
+
 /* USER CODE END 0 */
 
 /**
@@ -106,6 +110,7 @@ int main(void)
 	int mfcc_d1 = 0;
 	int mfcc_d2 = 0;
 	csf_float winFunc[400] = {0.0};
+	char stringBuffer[PRINT_BUFFER_SIZE];
   /* USER CODE END 1 */
   
 
@@ -136,188 +141,250 @@ int main(void)
   //MX_TIM3_Init();
   MX_X_CUBE_AI_Init();
   /* USER CODE BEGIN 2 */
-  //HAL_TIM_Base_Start_IT(&htim3);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*) adc_buf, ADC_BUF_SIZE);
-  //HAL_StatusTypeDef HAL_ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //For loop 0.1s == 1600 samples
-	  	   //BigBufferSize == number of seconds to record * sample rate
-	  	   //ADC Fill BigBuffer
-	  	   //BigBufferSize = SampleRate * RecordingLength
-	  	  //StartTime = timer;
-	      char buffer11[100];
-	  	  strcpy(buffer11, "Recording..\r\n");
-	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer11, strlen(buffer11), HAL_MAX_DELAY);
-	  	  for (uint16_t i = 0; i < BIG_BUFFER_SIZE; i++){
-	  		  /*startTime = timer;
-	  		  HAL_ADC_Start(&hadc1);
-	  		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	  		  BigBuffer[i] = HAL_ADC_GetValue(&hadc1);*/
-	  		  // Timer increments every 1us, for sample rate of 16000Hz
-	  		  // Sample every 1/16000 seconds, When timerfin - timerstart == 62.5 round down to 62
-	  		  // Acutally sampling 0.992 seconds, sample rate slightly faster, because of available timer restriction
-	  		  while (TakeADCReading == 0){
-	  			// Do Nothing
-	  			// Wait to take a further ADC
-	  		  }
-	  		  TakeADCReading = 0;
-	  		  BigBuffer[i] = adc_buf[112];
-	  	  }
-	  	  char buffer15[100];
-	  	strcpy(buffer15, "Recorded\r\n");
-	  		  	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer15, strlen(buffer15), HAL_MAX_DELAY);
-	  			strcpy(buffer15, "Printing: \r\n");
-	  						  HAL_UART_Transmit(&huart3, (uint8_t*)buffer15, strlen(buffer15), HAL_MAX_DELAY);
-	  		  char buffer5[1000];
-	  		  for (int i = 0; i < (BIG_BUFFER_SIZE/8); i++){
-	  			  sprintf(buffer5, "%u, %u, %u, %u, %u, %u, %u, %u,\r\n", BigBuffer[i*8],
-	  			  BigBuffer[i*8+1], BigBuffer[i*8+2], BigBuffer[i*8+3], BigBuffer[i*8+4],
+	  // Print to serial------------------------//
+	  strcpy(stringBuffer, "Recording..\r\n");
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  //----------------------------------------//
+
+
+	  // Gather signal, from ADC readings-----------------//
+	  for (uint16_t i = 0; i < BIG_BUFFER_SIZE; i++){
+		  while (TakeADCReading == 0){
+			  // Do Nothing
+			  // Wait to take a further ADC Reading
+		  }
+		  TakeADCReading = 0;
+		  BigBuffer[i] = adc_buf[112];
+	  }
+	  //--------------------------------------------------//
+
+
+	  // Print to serial---------------------------//
+	  strcpy(stringBuffer, "Recorded\r\n");
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  //------------------------------------------//
+
+
+	  // Check Signal, from ADC, print to serial-----------------------------//
+	  strcpy(stringBuffer, "Printing: \r\n");
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+	  for (int i = 0; i < (BIG_BUFFER_SIZE/8); i++){
+		  sprintf(stringBuffer, "%i, %i, %i, %i, %i, %i, %i, %i,\r\n", BigBuffer[i*8],
+				  BigBuffer[i*8+1], BigBuffer[i*8+2], BigBuffer[i*8+3], BigBuffer[i*8+4],
 	  			  BigBuffer[i*8+5], BigBuffer[i*8+6], BigBuffer[i*8+7]);
-	  			  HAL_UART_Transmit(&huart3, (uint8_t*)buffer5, strlen(buffer5), HAL_MAX_DELAY);
-	  		  }
-	  		  strcpy(buffer15, "Printed \r\n");
-	  		  HAL_UART_Transmit(&huart3, (uint8_t*)buffer15, strlen(buffer15), HAL_MAX_DELAY);
-	  	  /*for (uint16_t i = 0; i < BIG_BUFFER_SIZE; i++){
-	  		  BigBufferSigned[i] = (int16_t) BigBuffer[i];
-	  	  }*/
-	  	  /*FinishTime = timer;
-	  	  //char buffer[100];
-	  	  //sprintf(buffer, "%lu\r\n", timer);
-	  	  //HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
-	  	   //For loop 9 times
-	  	   //Fill LittleBuffer
-	  	  for (uint16_t i = 0; i < SPECTROGRAM_COLS; i++){
-	  		  // Window size is 400 samples apart from the final window which is 320
-	  		  // copy window into buffer
-	  		  StartWindowIndex = i * WINDOW_STEP;
-	  		  EndWindowIndex = StartWindowIndex + DESIRED_WINDOW_SIZE;
-	  		  if (EndWindowIndex > BIG_BUFFER_SIZE){
-	  			  EndWindowIndex = BIG_BUFFER_SIZE;
-	  		  }
-	  		  RealWindowSize = EndWindowIndex - StartWindowIndex;
-	  		  for (uint32_t j = 0; j < RealWindowSize; j++){
-	  			  // Convert to float
-	  			  sample = ((float32_t) BigBuffer[StartWindowIndex + j]);
-	  			  //// Divide by maximum ADC value (maximum uint16_t value)
-	  			  //// Check that single ended
-	  			  sample /= (float32_t) 65535;
-	  			  LittleBuffer[j] = sample;
-	  		  }
-	  		   //Zero pad to make NFFT (FILL_BUFFER_SIZE) == 512
-	  		  for (uint16_t i = 0; i < FILL_BUFFER_SIZE - RealWindowSize; i++){
-	  			  LittleBuffer[i + RealWindowSize] = 0.0;
-	  		  }
-	  		  strcpy(buffer, "Here4!\r\n");
-	  		  HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen((char*)buffer), HAL_MAX_DELAY);
-	  		  for (uint16_t i = 0; i < FILL_BUFFER_SIZE; i++){
-	  			  sprintf(buffer, "%f, count = %u\r\n", LittleBuffer[i], i);
-	  			  HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
-	  		  }
-	  		   //ASC_Run(LittleBuffer)
-	  		  ASC_Run(LittleBuffer);
-	  		  strcpy(buffer, "HereEndASC_Run!\r\n");
-	  		  HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen((char*)buffer), HAL_MAX_DELAY);
-	  	  }*/
-	  	  /*mfcc(const short* aSignal, unsigned int aSignalLen, int aSampleRate,
-	  	       csf_float aWinLen, csf_float aWinStep,
-	  	       int aNCep, int aNFilters, int aNFFT,
-	  	       int aLowFreq, int aHighFreq, csf_float aPreemph,
-	  	       int aCepLifter, int aAppendEnergy,
-	  	       csf_float* aWinFunc,
-	  	       csf_float** aMFCC, int* mfcc_d1, int* mfcc_d2)*/
-	  	  for (int i = 0; i < 400; i++){
-	  		  winFunc[i] = 1.0;
-	  	  }
-	  	  char buffer2[100];
-	  	  	  strcpy(buffer2, "Before mfcc\r\n");
-	  	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer2, strlen(buffer2), HAL_MAX_DELAY);
-	  	  mfcc(BigBuffer, BIG_BUFFER_SIZE, 16000,
-	  	  	       0.025, 0.01,
-	  	  	       13, 26, 512,
-	  	  	       0, 0, 0.97,
-	  	  	       22, 1,
-	  			   &winFunc,
-	  	  	       &MFCC, &mfcc_d1, &mfcc_d2);
-	  	  char buffer3[100];
-	  	  strcpy(buffer3, "After mfcc\r\n");
-	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);
-	  	  for (int i = 0; i < (9); i++){
-	  		  sprintf(buffer5, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n", MFCC[i*13],
-	  				  MFCC[i*13+1], MFCC[i*13+2], MFCC[i*13+3], MFCC[i*13+4], MFCC[i*13+5], MFCC[i*13+6],
-	  				  MFCC[i*13+7], MFCC[i*13+8], MFCC[i*13+9], MFCC[i*13+10], MFCC[i*13+11],
-	  				  MFCC[i*13+12]);
-	  		  HAL_UART_Transmit(&huart3, (uint8_t*)buffer5, strlen(buffer5), HAL_MAX_DELAY);
-	  	  }
-	  	  //ai_u8 NnOutput[AI_NETWORK_OUT_1_SIZE];
-	  	  //ai_u8 NnInput[AI_NETWORK_IN_1_SIZE];
-	  	  ai_float NnOutput[AI_NETWORK_OUT_1_SIZE];
-	  	  ai_float NnInput[AI_NETWORK_IN_1_SIZE];
-	  	  //aiConvertInputFloat_2_Uint8(MFCC, AscNnInput);
+		  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  }
 
-	  	  float min = -70.39183738219418;
-	  	  float max = 59.68619272064539;
-	  	  for (int i = 0; i < (13*9); i++){
-	  		  NnInput[i] = (MFCC[i] - min) / (max - min);
-	  	  }
-	  	  strcpy(buffer3, "AscNnInput: \r\n");
-	  	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);
-	  	  char buffer[2000];
-	  	  	  /*for (int i = 0; i < (9); i++){
-	  	  		  sprintf(buffer, "%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u\r\n", MFCC[i*13],
-	  	  				AscNnInput[i*13+1], AscNnInput[i*13+2], AscNnInput[i*13+3], AscNnInput[i*13+4], AscNnInput[i*13+5], AscNnInput[i*13+6],
-	  					  AscNnInput[i*13+7], AscNnInput[i*13+8], AscNnInput[i*13+9], AscNnInput[i*13+10], AscNnInput[i*13+11],
-	  					  AscNnInput[i*13+12]);
-	  	  		  HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
-	  	  	  }*/
-	  	  for (int i = 0; i < (9); i++){
-	  		  sprintf(buffer, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n", NnInput[i*13],
-	  				  NnInput[i*13+1], NnInput[i*13+2], NnInput[i*13+3], NnInput[i*13+4], NnInput[i*13+5], NnInput[i*13+6],
-	  				  NnInput[i*13+7], NnInput[i*13+8], NnInput[i*13+9], NnInput[i*13+10], NnInput[i*13+11],
-	  				  NnInput[i*13+12]);
-	  		  HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
-	  	  }
-	  	  aiRun(NnInput,NnOutput);
-	  	  //aiRun(GlassSample, NnOutput);
-	  	  /*const ai_buffer *input = &report.inputs[0];
-	  	  const ai_buffer_format fmt_1 = AI_BUFFER_FORMAT(input);
-	  	  const uint32_t type = AI_BUFFER_FMT_GET_TYPE(fmt_1);
-	  	  const uint32_t floatYes = AI_BUFFER_FMT_GET_FLOAT(fmt_1);
-	  	  const uint32_t signedYes = AI_BUFFER_FMT_GET_FLOAT(fmt_1);
-	  	  const uint32_t bits = AI_BUFFER_FMT_GET_BITS(fmt_1);
-	  	  sprintf(buffer3, "type = %lu, floatYes = %lu, signedYes = %lu, bits = %lu\r\n", type, floatYes, signedYes, bits);
-	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);*/
-	  	  for (int i = 0; i < AI_NETWORK_OUT_1_SIZE; i++){
-	  		  sprintf(buffer3, "%i Output = %f\r\n", i, NnOutput[i]);
-	  		  HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);
-	  	  }
-	  	  //aiConvertOutputUint8_2_Float(AscNnOutput, pNetworkOut);*/
-	  	  /*char buffer4[100];
-	  	  	  strcpy(buffer4, "Before meta retrieval\r\n");
-	  	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer4, strlen(buffer4), HAL_MAX_DELAY);
-	  	  ai_buffer * bufferPtr = &(report.inputs[0]);
-	  	  strcpy(buffer4, "After BufferPtr Assignment retrieval\r\n");
-	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer4, strlen(buffer4), HAL_MAX_DELAY);
-	  	  ai_float scale = AI_BUFFER_META_INFO_INTQ_GET_SCALE(bufferPtr->meta_info, 0);
-	  	  strcpy(buffer4, "After scale Assignment retrieval\r\n");
-	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer4, strlen(buffer4), HAL_MAX_DELAY);
-	  	  int zero_point = AI_BUFFER_META_INFO_INTQ_GET_ZEROPOINT(bufferPtr->meta_info, 0);
-	  	  strcpy(buffer4, "After meta retrieval\r\n");
-	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer4, strlen(buffer4), HAL_MAX_DELAY);
-	  	  char buffer3[100];
-	  	  sprintf(buffer3, "%f, %d\r\n", scale, zero_point);
-	  	  HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);*/
-	      return 1;
-	      /* USER CODE END WHILE */
+	  strcpy(stringBuffer, "Printed \r\n");
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  //---------------------------------------------------------------------//
 
-	    //MX_X_CUBE_AI_Process();
+
+	  // Isolate peak----------------------------//
+	  // Get maximum/peak value and Index
+	  int16_t maxValue = 0;
+	  int16_t maxValueIndex = 0;
+	  int16_t samplesBefore = (int16_t) (0.03*SAMPLE_RATE);
+	  int16_t samplesAfter = (int16_t) (0.07*SAMPLE_RATE);
+	  for (int i = 0; i < (BIG_BUFFER_SIZE); i++){
+	  		  if (BigBuffer[i] > maxValue){
+	  			  if (i < samplesBefore){
+	  				  // Don't set maximum
+	  			  }
+	  			  else if (i > BIG_BUFFER_SIZE - samplesAfter){
+	  				  // Don't set maximum
+	  			  }
+	  			  else {
+					  maxValue = BigBuffer[i];
+					  maxValueIndex = i;
+	  			  }
+	  		  }
+	  }
+	  sprintf(stringBuffer, "MaxValueIndex: %u\r\n", maxValueIndex);
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+
+	  // Isolate 0.1 seconds around peak
+	  // Take 0.03 seconds before peak and 0.07 seconds after
+	  int16_t peakStartIndex = maxValueIndex - samplesBefore;
+	  int16_t peakEndIndex = maxValueIndex + samplesAfter;
+
+	  sprintf(stringBuffer, "peakStartIndex: %u\r\n", peakStartIndex);
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+	  sprintf(stringBuffer, "peakEndIndex: %u\r\n", peakEndIndex);
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+
+	  // Fill 0.1 second window
+	  for (int16_t i = 0; (i + peakStartIndex) < peakEndIndex; i++){
+		  LittleBuffer[i] = BigBuffer[i + peakStartIndex];
+	  }
+	  //-----------------------------------------//
+
+
+	  // LittleBuffer, Before Normalization-------------------------//
+	  /*strcpy(stringBuffer, "LittleBuffer, Before Normalization:\r\n");
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+	  for (int i = 0; i < (LITTLE_BUFFER_SIZE/8); i++){
+		  sprintf(stringBuffer, "%i, %i, %i, %i, %i, %i, %i, %i,\r\n", LittleBuffer[i*8],
+				  LittleBuffer[i*8+1], LittleBuffer[i*8+2], LittleBuffer[i*8+3], LittleBuffer[i*8+4],
+				  LittleBuffer[i*8+5], LittleBuffer[i*8+6], LittleBuffer[i*8+7]);
+		  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  }*/
+	  //-----------------------------------------------------------//
+
+
+	  // Calculate window function, for use in mfcc function-----------//
+	  for (int i = 0; i < 400; i++){
+		  winFunc[i] = 1.0;
+	  }
+	  //---------------------------------------------------------------//
+
+
+	  // Normalization signal before mfcc--------------//
+	  // Get minimum value
+	  int16_t minValue = MAX_UINT12;
+	  for (int i = 0; i < LITTLE_BUFFER_SIZE; i++){
+		  if (LittleBuffer[i] < minValue){
+			  minValue = LittleBuffer[i];
+		  }
+	  }
+
+	  sprintf(stringBuffer, "MaxValue = %u\r\n", maxValue);
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  sprintf(stringBuffer, "MinValue = %u\r\n", minValue);
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+	  // Int Normalization, between 4095 and 0
+	  float NormFactor = ((float) MAX_UINT12/ (float) (maxValue - minValue));
+	  for (int i = 0; i < LITTLE_BUFFER_SIZE; i++){
+		  float tmp = (float) (LittleBuffer[i] - minValue) * NormFactor;
+		  floatToIntRound(&tmp, &LittleBuffer[i]);
+	  }
+	  //----------------------------------------------//
+
+
+	  // Check LittleBuffer After Normalization------------------------//
+	  /*strcpy(stringBuffer, "Before mfcc\r\n");
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  strcpy(stringBuffer, "LittleBuffer, After Normalization:\r\n");
+	  	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+	  for (int i = 0; i < (LITTLE_BUFFER_SIZE/8); i++){
+		  sprintf(stringBuffer, "%i, %i, %i, %i, %i, %i, %i, %i,\r\n", LittleBuffer[i*8],
+				  LittleBuffer[i*8+1], LittleBuffer[i*8+2], LittleBuffer[i*8+3], LittleBuffer[i*8+4],
+				  LittleBuffer[i*8+5], LittleBuffer[i*8+6], LittleBuffer[i*8+7]);
+		  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  }*/
+	  //--------------------------------------------------------------//
+
+
+	  // Get Mfcc----------------------------------//
+	  mfcc(LittleBuffer, LITTLE_BUFFER_SIZE, SAMPLE_RATE,
+			   WINDOW_LENGTH, WINDOW_STEP, NCEPS, NFILT, NFFT,
+			   0, 0, 0.97, 22, 1, winFunc,
+			   &MFCC, &mfcc_d1, &mfcc_d2);
+	  //-------------------------------------------//
+
+
+	  // Check Mfcc, print to serial--------------------------//
+	  /*strcpy(stringBuffer, "After mfcc\r\n");
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+	  for (int i = 0; i < (MFCC_LENGTH); i++){
+		  sprintf(stringBuffer, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n", MFCC[i*13],
+				  MFCC[i*13+1], MFCC[i*13+2], MFCC[i*13+3], MFCC[i*13+4], MFCC[i*13+5], MFCC[i*13+6],
+				  MFCC[i*13+7], MFCC[i*13+8], MFCC[i*13+9], MFCC[i*13+10], MFCC[i*13+11],
+				  MFCC[i*13+12]);
+		  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  }*/
+	  //------------------------------------------------------//
+
+
+	  // Initialize Input/Output buffers ----------------------//
+	  ai_float NnOutput[AI_NETWORK_OUT_1_SIZE];
+	  ai_float NnInput[AI_NETWORK_IN_1_SIZE];
+	  //-------------------------------------------------------//
+
+
+	  // Normalization after Mfcc------------------------------//
+	  // Get maximum and minimum from data, for normalization
+	  float maxMfccValue = 0;
+	  float minMfccValue = 10000000.0;
+	  for (int i = 0; i < (NCEPS*MFCC_LENGTH); i++){
+		  if (MFCC[i] > maxMfccValue){
+			  maxMfccValue = MFCC[i];
+		  }
+		  if (MFCC[i] < minMfccValue){
+			  minMfccValue = MFCC[i];
+		  }
+	  }
+
+	  // Normalise
+	  for (int i = 0; i < (NCEPS*MFCC_LENGTH); i++){
+		  NnInput[i] = (MFCC[i] - minMfccValue) / (maxMfccValue - minMfccValue);
+	  }
+	  //------------------------------------------------------//
+
+
+	  // Check Input, print to serial--------------//
+	  /*strcpy(stringBuffer, "NnInput: \r\n");
+	  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+
+	  for (int i = 0; i < (9); i++){
+		  sprintf(stringBuffer, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n", NnInput[i*13],
+				  NnInput[i*13+1], NnInput[i*13+2], NnInput[i*13+3], NnInput[i*13+4], NnInput[i*13+5],
+				  NnInput[i*13+6], NnInput[i*13+7], NnInput[i*13+8], NnInput[i*13+9], NnInput[i*13+10],
+				  NnInput[i*13+11], NnInput[i*13+12]);
+		  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  }*/
+	  //-------------------------------------------//
+
+
+	  // Run NN ---------------------------//
+	  aiRun(NnInput,NnOutput);
+	  //aiRun(GlassSample, NnOutput); // Test
+	  //-----------------------------------//
+
+
+	  // Print Result Probabilites --------------------//
+	  for (int i = 0; i < AI_NETWORK_OUT_1_SIZE; i++){
+		  sprintf(stringBuffer, "%i Output = %f\r\n", i, NnOutput[i]);
+		  HAL_UART_Transmit(&huart3, (uint8_t*)stringBuffer, strlen(stringBuffer), HAL_MAX_DELAY);
+	  }
+	  //-----------------------------------------------//
+
+
+	  // Take only one reading------------------//
+	  return 1;
+	  //----------------------------------------//
+
+	  /* USER CODE END WHILE */
+
   /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
+}
+
+void floatToIntRound(float *input, int16_t *output){
+	int16_t tmp = (int16_t) *input;
+	float afterDecimal = *input - (float) tmp;
+	if (afterDecimal < 0.5){
+		*output = tmp;
+	}
+	else{
+		*output = tmp + 1;
+	}
 }
 
 /**
@@ -541,16 +608,16 @@ static void MX_USART3_UART_Init(void)
   * @param None
   * @retval None
   */
-static void MX_USB_OTG_FS_PCD_Init(void)
+/*static void MX_USB_OTG_FS_PCD_Init(void)
 {
 
-  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
+   USER CODE BEGIN USB_OTG_FS_Init 0
 
-  /* USER CODE END USB_OTG_FS_Init 0 */
+   USER CODE END USB_OTG_FS_Init 0
 
-  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
+   USER CODE BEGIN USB_OTG_FS_Init 1
 
-  /* USER CODE END USB_OTG_FS_Init 1 */
+   USER CODE END USB_OTG_FS_Init 1
   hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
   hpcd_USB_OTG_FS.Init.dev_endpoints = 6;
   hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
@@ -565,11 +632,11 @@ static void MX_USB_OTG_FS_PCD_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
+   USER CODE BEGIN USB_OTG_FS_Init 2
 
-  /* USER CODE END USB_OTG_FS_Init 2 */
+   USER CODE END USB_OTG_FS_Init 2
 
-}
+}*/
 
 /** 
   * Enable DMA controller clock

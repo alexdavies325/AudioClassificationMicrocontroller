@@ -380,9 +380,6 @@ csf_framesig(const csf_float* aSignal, unsigned int aSignalLen, int aFrameLen,
     n_frames = 1;
   }
 
-  strcpy(buffer3, "After if signalLen > FrameLen test \r\n");
-        	HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);
-
   indices = (int*)malloc(sizeof(int) * n_frames * aFrameLen);
   for (i = 0, idx = 0; i < n_frames; i++) {
     int base = i * aFrameStep;
@@ -397,13 +394,13 @@ csf_framesig(const csf_float* aSignal, unsigned int aSignalLen, int aFrameLen,
     for (j = 0; j < aFrameLen; j++, idx++, iidx++) {
       int index = indices[iidx];
       frames[idx] = index < aSignalLen ? aSignal[index] : 0.0;
-      strcpy(buffer3, "Before aWinFunc: csf_framesig\r\n");
-      HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);
+      //strcpy(buffer3, "Before aWinFunc: csf_framesig\r\n");
+      //HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);
       if (aWinFunc) {
         frames[idx] *= aWinFunc[j];
 
-      sprintf(buffer3, "frames[idx] = %f, j = %i\r\n", frames[idx], j);
-      HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);
+        //sprintf(buffer3, "frames[idx] = %f, j = %i\r\n", frames[idx], j);
+        //HAL_UART_Transmit(&huart3, (uint8_t*)buffer3, strlen(buffer3), HAL_MAX_DELAY);
       }
     }
     for (j = aFrameLen; j < aPaddedFrameLen; j++, idx++) {

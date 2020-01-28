@@ -28,24 +28,24 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-FinalAudioClassificationPPG.elf \
+FinalAudioClassificationPPGC8.elf \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-FinalAudioClassificationPPG.list \
+FinalAudioClassificationPPGC8.list \
 
 OBJCOPY_BIN += \
-FinalAudioClassificationPPG.bin \
+FinalAudioClassificationPPGC8.bin \
 
 
 # All Target
-all: FinalAudioClassificationPPG.elf secondary-outputs
+all: FinalAudioClassificationPPGC8.elf secondary-outputs
 
 # Tool invocations
-FinalAudioClassificationPPG.elf: $(OBJS) $(USER_OBJS) /home/alex/Alex/STM32CubeIDE/workspace_1.1.0/FinalAudioClassificationPPG/STM32F746ZGTX_FLASH.ld
-	arm-none-eabi-gcc -o "FinalAudioClassificationPPG.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/alex/Alex/STM32CubeIDE/workspace_1.1.0/FinalAudioClassificationPPG/STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="FinalAudioClassificationPPG.map" -Wl,--gc-sections -static -L../Middlewares/ST/AI/Lib --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+FinalAudioClassificationPPGC8.elf: $(OBJS) $(USER_OBJS) /home/alex/Alex/STM32CubeIDE/workspace_1.1.0/FinalAudioClassificationPPGC8/STM32F746ZGTX_FLASH.ld
+	arm-none-eabi-gcc -o "FinalAudioClassificationPPGC8.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/alex/Alex/STM32CubeIDE/workspace_1.1.0/FinalAudioClassificationPPGC8/STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="FinalAudioClassificationPPGC8.map" -Wl,--gc-sections -static -L../Middlewares/ST/AI/Lib --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -54,13 +54,13 @@ default.size.stdout: $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-FinalAudioClassificationPPG.list: $(EXECUTABLES)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "FinalAudioClassificationPPG.list"
+FinalAudioClassificationPPGC8.list: $(EXECUTABLES)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "FinalAudioClassificationPPGC8.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-FinalAudioClassificationPPG.bin: $(EXECUTABLES)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "FinalAudioClassificationPPG.bin"
+FinalAudioClassificationPPGC8.bin: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "FinalAudioClassificationPPGC8.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 

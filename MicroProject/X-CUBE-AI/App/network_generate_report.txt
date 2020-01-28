@@ -1,15 +1,15 @@
 Neural Network Tools for STM32 v1.1.0 (AI tools v4.1.0)
-Created date    : 2019-12-11 10:25:46
+Created date    : 2019-12-11 10:49:42
 
-Exec/report summary (generate dur=15.958s err=0)
+Exec/report summary (generate dur=8.171s err=0)
 ------------------------------------------------------------------------------------------------------------------------
 model file      : C:\Users\User\Downloads\ModelsForMicro\ModelsForMicro\model_convReducedLessTest.h5
 type            : keras (keras_dump)
 c_name          : network
-compression     : 4
+compression     : 8
 quantize        : None
 L2r error       : NOT EVALUATED
-workspace dir   : C:\Users\User\AppData\Local\Temp\mxAI_workspace12530228989001668232400756886597
+workspace dir   : C:\Users\User\AppData\Local\Temp\mxAI_workspace27065515786006526161079678222177
 output dir      : C:\Users\User\.stm32cubemx\stm32ai_output
 
 model_name      : model_convReducedLessTest
@@ -20,7 +20,7 @@ output          : dense_6_nl [3 items, 12 B, ai_float, FLOAT32]
 output (total)  : 12 B
 params #        : 498,947 items (1.90 MiB)
 macc            : 11,781,149
-rom (ro)        : 817,164 (798.01 KiB) -59.06%
+rom (ro)        : 590,988 (577.14 KiB) -70.39%
 ram (rw) wb+io  : 55,552 + 480 (54.25 KiB + 480 B)
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -43,29 +43,29 @@ id  layer (type)               output shape      param #     connected to       
 ------------------------------------------------------------------------------------------------------------------------
 6   flatten_2 (Reshape)        (3072,)                       max_pooling2d_2                                            
 ------------------------------------------------------------------------------------------------------------------------
-7   dense_4 (Dense)            (128,)            393,344     flatten_2                393,216        394,752 (c)        
+7   dense_4 (Dense)            (128,)            393,344     flatten_2                393,216        197,184 (c)        
     dense_4_nl (Nonlinearity)  (128,)                        dense_4                  128                               
 ------------------------------------------------------------------------------------------------------------------------
-8   dense_5 (Dense)            (64,)             8,256       dense_4_nl               8,192          33,024             
+8   dense_5 (Dense)            (64,)             8,256       dense_4_nl               8,192          4,416 (c)          
     dense_5_nl (Nonlinearity)  (64,)                         dense_5                  64                                
 ------------------------------------------------------------------------------------------------------------------------
 9   dense_6 (Dense)            (3,)              195         dense_5_nl               192            780                
     dense_6_nl (Nonlinearity)  (3,)                          dense_6                  45                                
 ------------------------------------------------------------------------------------------------------------------------
-model_convReducedLessTest p=498947(1.90 MBytes) macc=11781149 rom=798.01 KBytes ram=54.25 KBytes -59.06%
+model_convReducedLessTest p=498947(1.90 MBytes) macc=11781149 rom=577.14 KBytes ram=54.25 KBytes -70.39%
 
  
-Complexity per-layer - macc=11,781,149 rom=817,164
+Complexity per-layer - macc=11,781,149 rom=590,988
 ------------------------------------------------------------------------------------------------------------------------
 id      layer (type)               macc                                    rom                                    
 ------------------------------------------------------------------------------------------------------------------------
 0       conv2d_5 (Conv2D)          |                                 0.2%  |                                 0.1% 
-1       conv2d_6 (Conv2D)          ||                                4.6%  ||                                2.3% 
-2       conv2d_7 (Conv2D)          ||||||||                         18.4%  ||||||                            9.1% 
-3       conv2d_8 (Conv2D)          |||||||||||||||||||||||||||||||  73.5%  |||||||||||||||||||||||          36.2% 
-7       dense_4 (Dense)            ||                                3.3%  |||||||||||||||||||||||||||||||  48.3% 
+1       conv2d_6 (Conv2D)          ||                                4.6%  ||                                3.1% 
+2       conv2d_7 (Conv2D)          ||||||||                         18.4%  ||||||||                         12.5% 
+3       conv2d_8 (Conv2D)          |||||||||||||||||||||||||||||||  73.5%  |||||||||||||||||||||||||||||||  50.0% 
+7       dense_4 (Dense)            ||                                3.3%  |||||||||||||||||||||            33.4% 
 7       dense_4_nl (Nonlinearity)  |                                 0.0%  |                                 0.0% 
-8       dense_5 (Dense)            |                                 0.1%  |||                               4.0% 
+8       dense_5 (Dense)            |                                 0.1%  |                                 0.7% 
 8       dense_5_nl (Nonlinearity)  |                                 0.0%  |                                 0.0% 
 9       dense_6 (Dense)            |                                 0.0%  |                                 0.1% 
 9       dense_6_nl (Nonlinearity)  |                                 0.0%  |                                 0.0% 

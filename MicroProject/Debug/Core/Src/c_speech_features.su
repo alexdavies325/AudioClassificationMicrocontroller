@@ -7,9 +7,9 @@ c_speech_features.c:270:1:csf_mel2hz	24	static
 c_speech_features.c:276:1:csf_lifter	56	static
 c_speech_features.c:296:1:csf_delta	48	static
 c_speech_features.c:326:1:csf_get_filterbanks	80	static
-c_speech_features.c:363:1:csf_framesig	184	static
-c_speech_features.c:421:1:csf_deframesig	64	static
-c_speech_features.c:464:1:csf_preemphasis	32	static
-c_speech_features.c:478:1:csf_magspec	72	static
-c_speech_features.c:500:1:csf_powspec	48	static
-c_speech_features.c:515:1:csf_logpowspec	40	static
+c_speech_features.c:363:1:csf_framesig	176	static
+c_speech_features.c:418:1:csf_deframesig	64	static
+c_speech_features.c:461:1:csf_preemphasis	32	static
+c_speech_features.c:475:1:csf_magspec	72	static
+c_speech_features.c:497:1:csf_powspec	48	static
+c_speech_features.c:512:1:csf_logpowspec	40	static
