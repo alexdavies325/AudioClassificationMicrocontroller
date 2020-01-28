@@ -1,0 +1,4 @@
+kiss_fftndr.c:28:12:prod	24	static
+kiss_fftndr.c:36:17:kiss_fftndr_alloc	64	static
+kiss_fftndr.c:72:6:kiss_fftndr	56	static
+kiss_fftndr.c:98:6:kiss_fftndri	56	static

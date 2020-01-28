@@ -1,0 +1,15 @@
+c_speech_features.c:11:1:csf_mfcc	240	static
+c_speech_features.c:81:1:csf_fbank	232	static
+c_speech_features.c:161:1:csf_logfbank	192	static
+c_speech_features.c:186:1:csf_ssc	136	static
+c_speech_features.c:264:1:csf_hz2mel	24	static
+c_speech_features.c:270:1:csf_mel2hz	24	static
+c_speech_features.c:276:1:csf_lifter	56	static
+c_speech_features.c:296:1:csf_delta	48	static
+c_speech_features.c:326:1:csf_get_filterbanks	80	static
+c_speech_features.c:363:1:csf_framesig	184	static
+c_speech_features.c:421:1:csf_deframesig	64	static
+c_speech_features.c:464:1:csf_preemphasis	32	static
+c_speech_features.c:478:1:csf_magspec	72	static
+c_speech_features.c:500:1:csf_powspec	48	static
+c_speech_features.c:515:1:csf_logpowspec	40	static

@@ -1,0 +1,2 @@
+kiss_fftnd.c:28:16:kiss_fftnd_alloc	64	static
+kiss_fftnd.c:161:6:kiss_fftnd	48	static

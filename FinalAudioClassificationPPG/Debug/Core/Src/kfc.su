@@ -1,0 +1,4 @@
+kfc.c:31:21:find_cached_fft	32	static
+kfc.c:70:6:kfc_cleanup	16	static
+kfc.c:82:6:kfc_fft	24	static
+kfc.c:87:6:kfc_ifft	24	static

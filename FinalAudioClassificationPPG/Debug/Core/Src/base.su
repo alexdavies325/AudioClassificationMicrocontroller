@@ -1,0 +1,9 @@
+base.c:8:1:mfcc	184	static
+base.c:28:1:fbank	64	static
+base.c:43:1:logfbank	64	static
+base.c:56:1:ssc	64	static
+base.c:69:1:hz2mel	24	static
+base.c:75:1:mel2hz	24	static
+base.c:81:1:get_filterbanks	32	static
+base.c:93:1:lifter	32	static
+base.c:105:1:delta	24	static

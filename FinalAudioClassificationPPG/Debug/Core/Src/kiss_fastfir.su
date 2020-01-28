@@ -1,0 +1,5 @@
+kiss_fastfir.c:65:18:kiss_fastfir_alloc	72	static
+kiss_fastfir.c:173:13:fastconv1buf	40	static
+kiss_fastfir.c:192:15:kff_nocopy	32	static
+kiss_fastfir.c:209:8:kff_flush	32	static
+kiss_fastfir.c:228:8:kiss_fastfir	32	static
